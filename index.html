@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Word Submitter</title>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
+  <script>
+    (function(){
+      emailjs.init("YOUR_USER_ID"); // 🔐 Replace with your EmailJS user ID
+    })();
+  </script>
+</head>
+<body>
+  <h2>Enter a word:</h2>
+  <input type="text" id="wordInput" />
+  <button onclick="handleWord()">Submit</button>
+  <p id="response"></p>
+
+  <script>
+    const responses = [
+      "Nice choice!",
+      "That's an interesting word!",
+      "Cool, added!",
+      "Good pick!",
+      "Word saved successfully!"
+    ];
+
+    function getStoredWords() {
+      return JSON.parse(localStorage.getItem('words')) || [];
+    }
+
+    function saveWord(word) {
+      const words = getStoredWords();
+      words.push(word);
+      localStorage.setItem('words', JSON.stringify(words));
+    }
+
+    function handleWord() {
+      const input = document.getElementById("wordInput");
+      const word = input.value.trim().toLowerCase();
+      const output = document.getElementById("response");
+      const words = getStoredWords();
+
+      if (!word) {
+        output.innerText = "Please enter a word.";
+        return;
+      }
+
+      if (words.includes(word)) {
+        output.innerText = `"${word}" already exists! Try another word.`;
+        return;
+      }
+
+      saveWord(word);
+      const reply = responses[Math.floor(Math.random() * responses.length)];
+      output.innerText = `${reply} (${word} added)`;
+
+      sendEmail(word);
+      input.value = "";
+    }
+
+    function sendEmail(word) {
+      emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
+        word: word,
+      })
+      .then(() => {
+        console.log("Email sent!");
+      }, (error) => {
+        console.error("Email error:", error);
+      });
+    }
+  </script>
+</body>
+</html>
