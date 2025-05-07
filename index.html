@@ -80,6 +80,7 @@
       list-style: disc;
     }
     #adminAuth {
+      display: none;
       margin-top: 2rem;
       text-align: center;
     }
@@ -94,9 +95,8 @@
   </div>
 
   <div id="adminAuth">
-    <h3>Admin Login</h3>
-    <input type="password" id="adminPassword" placeholder="Enter admin password" />
-    <button onclick="checkPassword()">View Word List</button>
+    <input type="password" id="adminPassword" placeholder="Admin password" />
+    <button onclick="checkPassword()">Enter</button>
   </div>
 
   <div id="wordListContainer">
@@ -175,6 +175,18 @@
       document.getElementById("adminAuth").style.display = 'none';
       updateWordList(input);
     }
+
+    // 🕵️ Secret keyboard trigger (double-press shift)
+    let lastShiftTime = 0;
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Shift') {
+        const now = Date.now();
+        if (now - lastShiftTime < 400) {
+          document.getElementById('adminAuth').style.display = 'block';
+        }
+        lastShiftTime = now;
+      }
+    });
   </script>
 </body>
 </html>
