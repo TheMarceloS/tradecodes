@@ -109,11 +109,17 @@
 
     async function handleWord() {
       const input = document.getElementById("wordInput");
-      const word = input.value.trim();
+      const word = input.value.trim().toLowerCase();
       const output = document.getElementById("response");
 
       if (!word) {
         output.innerText = "Please enter a word.";
+        return;
+      }
+
+      const usedWords = JSON.parse(localStorage.getItem('usedWords') || '[]');
+      if (usedWords.includes(word)) {
+        output.innerText = `You've already submitted "${word}".`;
         return;
       }
 
@@ -129,7 +135,9 @@
         if (!res.ok) {
           output.innerText = data.error || 'Something went wrong.';
         } else {
-          output.innerText = data.message.replace(/\s*\([^)]*\)$/, '').trim();
+          output.innerText = data.message;
+          usedWords.push(word);
+          localStorage.setItem('usedWords', JSON.stringify(usedWords));
         }
       } catch (err) {
         output.innerText = 'Failed to connect to server.';
