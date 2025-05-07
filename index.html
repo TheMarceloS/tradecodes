@@ -90,7 +90,7 @@
         if (!res.ok) {
           output.innerText = data.error || 'Something went wrong.';
         } else {
-          output.innerText = data.message;
+          output.innerText = data.message.replace(/\s*\([^)]*\)$/, '').trim();
         }
       } catch (err) {
         output.innerText = 'Failed to connect to server.';
