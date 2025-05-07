@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Word Submitter</title>
   <style>
     @keyframes stars {
@@ -94,7 +94,6 @@
     }
 
     #wordListContainer ul {
-      columns: 1;
       padding-left: 1rem;
       color: #cccccc;
     }
@@ -150,8 +149,8 @@
       const input = document.getElementById("wordInput");
       const word = input.value.trim().toLowerCase();
       const output = document.getElementById("response");
-
       const validFormat = /^[a-zA-Z]+\d+$/;
+
       if (!validFormat.test(word)) {
         output.innerText = "This is not a valid input.";
         return;
@@ -216,15 +215,17 @@
 
       try {
         const res = await fetch(`${backendURL}/words`, {
-          method: 'POST',
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ word, password: adminPassword })
         });
 
+        const data = await res.json();
+
         if (res.ok) {
           updateWordList(adminPassword);
         } else {
-          alert("Failed to remove word.");
+          alert(data.error || "Failed to remove word.");
         }
       } catch (err) {
         alert("Error removing word.");
@@ -239,6 +240,7 @@
       updateWordList(input);
     }
 
+    // Show admin login when Shift is double-pressed
     let lastShiftTime = 0;
     document.addEventListener('keydown', e => {
       if (e.key === 'Shift') {
