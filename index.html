@@ -15,9 +15,10 @@
       margin: 0;
       padding: 0;
       display: flex;
-      height: 100vh;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
+      min-height: 100vh;
     }
     .container {
       background: white;
@@ -27,11 +28,12 @@
       text-align: center;
       max-width: 400px;
       width: 100%;
+      margin-top: 5vh;
     }
     h2 {
       margin-bottom: 1rem;
     }
-    input[type="text"] {
+    input[type="text"], input[type="password"] {
       padding: 0.6rem 1rem;
       font-size: 1rem;
       width: 100%;
@@ -56,10 +58,30 @@
       margin-top: 1rem;
       font-weight: bold;
     }
-    #wordList {
+    #wordListContainer {
+      margin-top: 3rem;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      max-width: 600px;
+      width: 100%;
+      display: none;
+    }
+    #wordListContainer h3 {
+      margin-top: 0;
+    }
+    #wordListContainer ul {
+      columns: 2;
+      padding-left: 1rem;
+    }
+    #wordListContainer li {
+      margin-bottom: 0.5rem;
+      list-style: disc;
+    }
+    #adminAuth {
       margin-top: 2rem;
-      font-size: 0.9rem;
-      color: #555;
+      text-align: center;
     }
   </style>
 </head>
@@ -69,10 +91,22 @@
     <input type="text" id="wordInput" />
     <button onclick="handleWord()">Submit</button>
     <p id="response"></p>
-    <div id="wordList"></div>
   </div>
+
+  <div id="adminAuth">
+    <h3>Admin Login</h3>
+    <input type="password" id="adminPassword" placeholder="Enter admin password" />
+    <button onclick="checkPassword()">View Word List</button>
+  </div>
+
+  <div id="wordListContainer">
+    <h3>All Submitted Words:</h3>
+    <ul id="wordList"></ul>
+  </div>
+
   <script>
     const backendURL = 'https://tradecodes.onrender.com';
+    const ADMIN_PASSWORD = 'mySecret123'; // 🔐 Change this to your desired password
 
     async function handleWord() {
       const input = document.getElementById("wordInput");
@@ -97,7 +131,9 @@
           output.innerText = data.error || 'Something went wrong.';
         } else {
           output.innerText = data.message.replace(/\s*\([^)]*\)$/, '').trim();
-          updateWordList();
+          if (document.getElementById("wordListContainer").style.display === 'block') {
+            updateWordList();
+          }
         }
       } catch (err) {
         output.innerText = 'Failed to connect to server.';
@@ -111,14 +147,22 @@
         const res = await fetch(`${backendURL}/words`);
         const data = await res.json();
         const list = data.words.map(w => `<li>${w}</li>`).join('');
-        document.getElementById("wordList").innerHTML = `<p>All submitted words:</p><ul>${list}</ul>`;
+        document.getElementById("wordList").innerHTML = list;
       } catch (err) {
         document.getElementById("wordList").innerText = "Failed to load word list.";
       }
     }
 
-    // Initial load
-    updateWordList();
+    function checkPassword() {
+      const input = document.getElementById("adminPassword").value;
+      if (input === ADMIN_PASSWORD) {
+        document.getElementById("wordListContainer").style.display = 'block';
+        document.getElementById("adminAuth").style.display = 'none';
+        updateWordList();
+      } else {
+        alert("Incorrect password.");
+      }
+    }
   </script>
 </body>
 </html>
