@@ -256,7 +256,7 @@
       updateWordList(input);
     }
 
-    // Show admin login when Shift is double-pressed
+    // 👨‍💻 Desktop: Double-Shift to show admin login
     let lastShiftTime = 0;
     document.addEventListener('keydown', e => {
       if (e.key === 'Shift') {
@@ -267,6 +267,23 @@
         lastShiftTime = now;
       }
     });
+    
+    // 📱 Mobile: Tap the <h2> title 5 times quickly
+    let tapCount = 0;
+    let tapTimer;
+    
+    document.querySelector("h2").addEventListener("click", () => {
+      tapCount++;
+      clearTimeout(tapTimer);
+    
+      if (tapCount >= 5) {
+        document.getElementById("adminAuth").style.display = "block";
+        tapCount = 0;
+      }
+    
+      tapTimer = setTimeout(() => tapCount = 0, 1000);
+    });
+
   </script>
 </body>
 </html>
