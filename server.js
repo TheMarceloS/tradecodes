@@ -1,4 +1,4 @@
-// server.js (Supabase version)
+// server.js (Supabase version with debug logs)
 import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 10000;
 
 // ✅ Supabase client setup
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // secure server key
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -29,39 +29,54 @@ app.post('/submit-word', async (req, res) => {
   const word = req.body.word?.trim().toLowerCase();
   const usedWords = req.body.usedWords || [];
 
+  console.log("📥 /submit-word received:");
+  console.log("  - word:", word);
+  console.log("  - usedWords:", usedWords);
+
   if (!word) return res.status(400).json({ error: 'Word is required' });
   if (!/^[a-zA-Z]+\d+$/.test(word)) return res.status(400).json({ error: 'This is not a valid input.' });
 
-  const { data: existing, error: fetchErr } = await supabase
-    .from('words')
-    .select('value')
-    .eq('value', word)
-    .single();
-
-  if (existing) return res.status(409).json({ error: 'This word was already submitted.' });
-
-  const { data: allWords, error: getErr } = await supabase
-    .from('words')
-    .select('value');
-
-  if (getErr) return res.status(500).json({ error: 'Failed to fetch words.' });
-
-  const serverWords = allWords.map(w => w.value);
-  const filteredWords = serverWords.filter(w => !usedWords.includes(w) && w !== word);
-  const responses = ['ERIS47', ...filteredWords];
-  const reply = responses[Math.floor(Math.random() * responses.length)];
-
-  const { error: insertErr } = await supabase
-    .from('words')
-    .insert([{ value: word }]);
-
-  if (insertErr) return res.status(500).json({ error: 'Failed to store word.' });
-
   try {
+    const { data: existing, error: fetchErr } = await supabase
+      .from('words')
+      .select('value')
+      .eq('value', word)
+      .single();
+
+    if (fetchErr) console.error("⚠️ Fetch error:", fetchErr);
+    if (existing) return res.status(409).json({ error: 'This word was already submitted.' });
+
+    const { data: allWords, error: getErr } = await supabase
+      .from('words')
+      .select('value');
+
+    if (getErr) {
+      console.error("❌ Failed to fetch words:", getErr);
+      return res.status(500).json({ error: 'Failed to fetch words.' });
+    }
+
+    const serverWords = allWords.map(w => w.value);
+    const filteredWords = serverWords.filter(w => !usedWords.includes(w) && w !== word);
+    const responses = ['ERIS47', ...filteredWords];
+    const reply = responses[Math.floor(Math.random() * responses.length)];
+
+    const { error: insertErr } = await supabase
+      .from('words')
+      .insert([{ value: word }]);
+
+    if (insertErr) {
+      console.error("❌ Failed to insert word:", insertErr);
+      return res.status(500).json({ error: 'Failed to store word.' });
+    }
+
+    console.log("📧 Sending email...");
     await sendEmail(word);
+    console.log("✅ Email sent");
+
     res.json({ message: reply });
   } catch (err) {
-    res.status(500).json({ error: 'Email sending failed' });
+    console.error("🔥 Server error:", err);
+    res.status(500).json({ error: 'Unexpected internal error.' });
   }
 });
 
@@ -127,5 +142,5 @@ async function sendEmail(word) {
 }
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
