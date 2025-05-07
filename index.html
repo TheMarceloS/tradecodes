@@ -146,44 +146,48 @@
     let adminPassword = '';
 
     async function handleWord() {
-      const input = document.getElementById("wordInput");
-      const word = input.value.trim().toLowerCase();
-      const output = document.getElementById("response");
-      const validFormat = /^[a-zA-Z]+\d+$/;
+  const input = document.getElementById("wordInput");
+  const word = input.value.trim().toLowerCase();
+  const output = document.getElementById("response");
+  const validFormat = /^[a-zA-Z]+\d+$/;
 
-      if (!validFormat.test(word)) {
-        output.innerText = "This is not a valid input.";
-        return;
-      }
+  if (!validFormat.test(word)) {
+    output.innerText = "This is not a valid input.";
+    return;
+  }
 
-      const usedWords = JSON.parse(localStorage.getItem('usedWords') || '[]');
-      if (usedWords.includes(word)) {
-        output.innerText = `You've already submitted "${word}".`;
-        return;
-      }
+  let usedWords = JSON.parse(localStorage.getItem('usedWords') || '[]');
 
-      try {
-        const res = await fetch(`${backendURL}/submit-word`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ word, usedWords })
-        });
+  if (usedWords.includes(word)) {
+    output.innerText = `You've already submitted "${word}".`;
+    return;
+  }
 
-        const data = await res.json();
+  try {
+    const res = await fetch(`${backendURL}/submit-word`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word, usedWords })
+    });
 
-        if (!res.ok) {
-          output.innerText = data.error || 'Something went wrong.';
-        } else {
-          output.innerText = data.message;
-          usedWords.push(word);
-          localStorage.setItem('usedWords', JSON.stringify(usedWords));
-        }
-      } catch (err) {
-        output.innerText = 'Failed to connect to server.';
-      }
+    const data = await res.json();
 
-      input.value = '';
+    if (!res.ok) {
+      output.innerText = data.error || 'Something went wrong.';
+    } else {
+      output.innerText = data.message;
+
+      // ✅ Merge & deduplicate list
+      usedWords.push(word);
+      const unique = [...new Set(usedWords)];
+      localStorage.setItem('usedWords', JSON.stringify(unique));
     }
+  } catch (err) {
+    output.innerText = 'Failed to connect to server.';
+  }
+
+  input.value = '';
+}
 
     async function updateWordList(password) {
       try {
