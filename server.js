@@ -31,19 +31,15 @@ app.post('/submit-word', async (req, res) => {
   if (!/^[a-zA-Z]+\d+$/.test(word)) return res.status(400).json({ error: 'This is not a valid input.' });
   if (words.includes(word)) return res.status(409).json({ error: 'This word was already submitted.' });
 
-  // Filter out used words and current input word
   const filteredWords = words.filter(w => !usedWords.includes(w) && w !== word);
   const replyPool = responses.concat(filteredWords);
   const reply = replyPool[Math.floor(Math.random() * replyPool.length)];
 
   try {
-    console.log("Trying to send email for:", word);
     await sendEmail(word);
-    console.log("Email sent successfully!");
     res.json({ message: reply });
-    words.push(word); // Add after selecting reply
+    words.push(word);
   } catch (err) {
-    console.error("Email failed:", err.message);
     res.status(500).json({ error: 'Email sending failed' });
   }
 });
@@ -75,6 +71,11 @@ app.delete('/words', (req, res) => {
 
   words.splice(index, 1);
   res.json({ message: 'Word removed successfully' });
+});
+
+// 🌐 Public sync endpoint for usedWords cleanup
+app.get('/approved-words', (req, res) => {
+  res.json({ words });
 });
 
 // 📧 Email via nodemailer
