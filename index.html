@@ -3,12 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Word Submitter</title>
-  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@2/dist/email.min.js"></script>
-  <script>
-    (function(){
-      emailjs.init("YOUR_USER_ID"); // 🔐 Replace with your EmailJS user ID
-    })();
-  </script>
 </head>
 <body>
   <h2>Enter a word:</h2>
@@ -17,57 +11,37 @@
   <p id="response"></p>
 
   <script>
-    const responses = [
-      "Nice choice!",
-      "That's an interesting word!",
-      "Cool, added!",
-      "Good pick!",
-      "Word saved successfully!"
-    ];
+    const backendURL = 'https://your-backend.onrender.com'; // ← change this
 
-    function getStoredWords() {
-      return JSON.parse(localStorage.getItem('words')) || [];
-    }
-
-    function saveWord(word) {
-      const words = getStoredWords();
-      words.push(word);
-      localStorage.setItem('words', JSON.stringify(words));
-    }
-
-    function handleWord() {
+    async function handleWord() {
       const input = document.getElementById("wordInput");
-      const word = input.value.trim().toLowerCase();
+      const word = input.value.trim();
       const output = document.getElementById("response");
-      const words = getStoredWords();
 
       if (!word) {
         output.innerText = "Please enter a word.";
         return;
       }
 
-      if (words.includes(word)) {
-        output.innerText = `"${word}" already exists! Try another word.`;
-        return;
+      try {
+        const res = await fetch(`${backendURL}/submit-word`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          output.innerText = data.error || 'Something went wrong.';
+        } else {
+          output.innerText = data.message;
+        }
+      } catch (err) {
+        output.innerText = 'Failed to connect to server.';
       }
 
-      saveWord(word);
-      const reply = responses[Math.floor(Math.random() * responses.length)];
-      output.innerText = `${reply} (${word} added)`;
-
-      sendEmail(word);
-      input.value = "";
-    }
-
-    function sendEmail(word) {
-      emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
-        word: word,
-      })
-      .then(() => {
-        console.log("Email sent!");
-      }, (error) => {
-        console.error("Email error:", error);
-      });
+      input.value = '';
     }
   </script>
 </body>
