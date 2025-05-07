@@ -7,11 +7,7 @@ const PORT = process.env.PORT || 10000;
 
 const words = [];
 const responses = [
-  "Nice choice!",
-  "That's an interesting word!",
-  "Cool, added!",
-  "Good pick!",
-  "Word saved successfully!"
+  "ERIS47"
 ];
 
 app.use(cors());
