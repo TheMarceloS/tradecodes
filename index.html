@@ -215,7 +215,7 @@
       if (!confirm(`Are you sure you want to remove "${word}"?`)) return;
 
       try {
-        const res = await fetch(`${backendURL}/remove-word`, {
+        const res = await fetch(`${backendURL}/words`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ word, password: adminPassword })
