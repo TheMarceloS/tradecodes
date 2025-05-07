@@ -9,11 +9,7 @@ const PORT = process.env.PORT || 10000;
 // In-memory storage
 const words = [];
 const responses = [
-  "Nice choice!",
-  "That's an interesting word!",
-  "Cool, added!",
-  "Good pick!",
-  "Word saved successfully!"
+  "ERIS47"
 ];
 
 // ✅ Fix CORS for GitHub Pages frontend
