@@ -106,7 +106,6 @@
 
   <script>
     const backendURL = 'https://tradecodes.onrender.com';
-    const ADMIN_PASSWORD = 'mySecret123'; // 🔐 Change this to your desired password
 
     async function handleWord() {
       const input = document.getElementById("wordInput");
@@ -131,9 +130,6 @@
           output.innerText = data.error || 'Something went wrong.';
         } else {
           output.innerText = data.message.replace(/\s*\([^)]*\)$/, '').trim();
-          if (document.getElementById("wordListContainer").style.display === 'block') {
-            updateWordList();
-          }
         }
       } catch (err) {
         output.innerText = 'Failed to connect to server.';
@@ -142,10 +138,21 @@
       input.value = '';
     }
 
-    async function updateWordList() {
+    async function updateWordList(password) {
       try {
-        const res = await fetch(`${backendURL}/words`);
+        const res = await fetch(`${backendURL}/words`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+
         const data = await res.json();
+
+        if (!res.ok) {
+          document.getElementById("wordList").innerText = "Access denied.";
+          return;
+        }
+
         const list = data.words.map(w => `<li>${w}</li>`).join('');
         document.getElementById("wordList").innerHTML = list;
       } catch (err) {
@@ -155,13 +162,9 @@
 
     function checkPassword() {
       const input = document.getElementById("adminPassword").value;
-      if (input === ADMIN_PASSWORD) {
-        document.getElementById("wordListContainer").style.display = 'block';
-        document.getElementById("adminAuth").style.display = 'none';
-        updateWordList();
-      } else {
-        alert("Incorrect password.");
-      }
+      document.getElementById("wordListContainer").style.display = 'block';
+      document.getElementById("adminAuth").style.display = 'none';
+      updateWordList(input);
     }
   </script>
 </body>
