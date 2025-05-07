@@ -112,8 +112,9 @@
       const word = input.value.trim().toLowerCase();
       const output = document.getElementById("response");
 
-      if (!word) {
-        output.innerText = "Please enter a word.";
+      const validFormat = /^[a-zA-Z]+\d+$/;
+      if (!validFormat.test(word)) {
+        output.innerText = "Word must be in the format: letters followed by numbers (e.g., mission42).";
         return;
       }
 
