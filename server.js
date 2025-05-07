@@ -9,7 +9,11 @@ const PORT = process.env.PORT || 10000;
 // In-memory storage
 const words = [];
 const responses = [
-  "ERIS47"
+  "Nice choice!",
+  "That's an interesting word!",
+  "Cool, added!",
+  "Good pick!",
+  "Word saved successfully!"
 ];
 
 // ✅ Fix CORS for GitHub Pages frontend
@@ -27,13 +31,15 @@ app.use(express.json());
 // POST endpoint to add word
 app.post('/submit-word', async (req, res) => {
   const word = req.body.word?.trim().toLowerCase();
+  const usedWords = req.body.usedWords || [];
   if (!word) return res.status(400).json({ error: 'Word is required' });
   if (words.includes(word)) return res.status(409).json({ error: 'Word already exists' });
 
   words.push(word);
 
-  // Combine base responses with all submitted words
-  const replyPool = responses.concat(words);
+  // Exclude user's own words from reply pool
+  const filteredWords = words.filter(w => !usedWords.includes(w));
+  const replyPool = responses.concat(filteredWords);
   const reply = replyPool[Math.floor(Math.random() * replyPool.length)];
 
   try {
