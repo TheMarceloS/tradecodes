@@ -1,4 +1,4 @@
-// server.js (Supabase version with debug logs)
+// server.js (Supabase version with debug logs + .maybeSingle fix)
 import express from 'express';
 import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
@@ -41,7 +41,7 @@ app.post('/submit-word', async (req, res) => {
       .from('words')
       .select('value')
       .eq('value', word)
-      .single();
+      .maybeSingle();  // <-- Updated here
 
     if (fetchErr) console.error("⚠️ Fetch error:", fetchErr);
     if (existing) return res.status(409).json({ error: 'This word was already submitted.' });
