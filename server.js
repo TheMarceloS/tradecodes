@@ -15,6 +15,7 @@ const responses = [
   "Word saved successfully!"
 ];
 
+// ✅ Fix CORS for GitHub Pages frontend
 app.use(cors({
   origin: 'https://themarcelos.github.io',
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -33,13 +34,16 @@ app.post('/submit-word', async (req, res) => {
   if (words.includes(word)) return res.status(409).json({ error: 'Word already exists' });
 
   words.push(word);
-  const reply = responses[Math.floor(Math.random() * responses.length)];
+
+  // Combine base responses with all submitted words
+  const replyPool = responses.concat(words);
+  const reply = replyPool[Math.floor(Math.random() * replyPool.length)];
 
   try {
     console.log("Trying to send email for:", word);
     await sendEmail(word);
     console.log("Email sent successfully!");
-    res.json({ message: `${reply} (${word} added)` });
+    res.json({ message: reply });
   } catch (err) {
     console.error("Email failed:", err.message);
     res.status(500).json({ error: 'Email sending failed' });
