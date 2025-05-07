@@ -241,6 +241,13 @@
       }
     }
 
+    const alreadySubmitted = localStorage.getItem('submittedWord');
+    if (alreadySubmitted) {
+      output.innerText = `You've already submitted a word.`;
+      return;
+    }
+
+
     function checkPassword() {
       const input = document.getElementById("adminPassword").value;
       adminPassword = input;
