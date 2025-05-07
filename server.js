@@ -27,10 +27,11 @@ app.post('/submit-word', async (req, res) => {
   try {
     console.log("Trying to send email for:", word);
     await sendEmail(word);
-    console.log("Email sent!");
+    console.log("Email sent successfully!");
     res.json({ message: `${reply} (${word} added)` });
   } catch (err) {
-    res.status(500).json({ error: 'Email sending failed' });
+    console.error("Email failed:", err.message);   // 👈 This line
+    res.status(500).json({ error: "Email sending failed" });
   }
 });
 
