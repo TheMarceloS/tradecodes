@@ -6,37 +6,38 @@ import nodemailer from 'nodemailer';
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// In-memory storage
+// In-memory word list and base responses
 const words = [];
 const responses = [
-  "ERIS47"
+  "Nice choice!",
+  "That's an interesting word!",
+  "Cool, added!",
+  "Good pick!",
+  "Word saved successfully!"
 ];
 
-// ✅ Fix CORS for GitHub Pages frontend
+// ✅ CORS setup for frontend
 app.use(cors({
   origin: 'https://themarcelos.github.io',
-  methods: ['GET', 'POST', 'OPTIONS'],
+  methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
 
-// Handle preflight requests explicitly
-app.options('*', cors());
-
+app.options('*', cors()); // Handle preflight
 app.use(express.json());
 
-// POST endpoint to add word
+// 📝 Submit a new word
 app.post('/submit-word', async (req, res) => {
   const word = req.body.word?.trim().toLowerCase();
   const usedWords = req.body.usedWords || [];
-  if (!word) return res.status(400).json({ error: 'Word is required' });
-  if (words.includes(word)) return res.status(409).json({ error: 'Word already exists' });
 
-  // Exclude user's own words AND the current input
+  if (!word) return res.status(400).json({ error: 'Word is required' });
+  if (!/^[a-zA-Z]+\d+$/.test(word)) return res.status(400).json({ error: 'This is not a valid input.' });
+  if (words.includes(word)) return res.status(409).json({ error: 'This word was already submitted.' });
+
+  // Filter out used words and current input word
   const filteredWords = words.filter(w => !usedWords.includes(w) && w !== word);
   const replyPool = responses.concat(filteredWords);
-
-  words.push(word);
-  
   const reply = replyPool[Math.floor(Math.random() * replyPool.length)];
 
   try {
@@ -44,13 +45,14 @@ app.post('/submit-word', async (req, res) => {
     await sendEmail(word);
     console.log("Email sent successfully!");
     res.json({ message: reply });
+    words.push(word); // Add after selecting reply
   } catch (err) {
     console.error("Email failed:", err.message);
     res.status(500).json({ error: 'Email sending failed' });
   }
 });
 
-// POST endpoint to securely view all words (with password)
+// 🔐 Admin-only: Get word list
 app.post('/words', (req, res) => {
   const password = req.body.password;
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -62,6 +64,24 @@ app.post('/words', (req, res) => {
   res.json({ words });
 });
 
+// 🗑️ Admin-only: Remove a word
+app.delete('/words', (req, res) => {
+  const password = req.body.password;
+  const wordToRemove = req.body.word?.trim().toLowerCase();
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
+  const index = words.indexOf(wordToRemove);
+  if (index === -1) return res.status(404).json({ error: 'Word not found' });
+
+  words.splice(index, 1);
+  res.json({ message: 'Word removed successfully' });
+});
+
+// 📧 Email via nodemailer
 async function sendEmail(word) {
   const transporter = nodemailer.createTransport({
     service: 'gmail',
