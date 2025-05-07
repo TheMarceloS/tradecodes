@@ -145,7 +145,7 @@
     const backendURL = 'https://tradecodes.onrender.com';
     let adminPassword = '';
 
-    async function handleWord() {
+async function handleWord() {
   const input = document.getElementById("wordInput");
   const word = input.value.trim().toLowerCase();
   const output = document.getElementById("response");
@@ -157,7 +157,6 @@
   }
 
   let usedWords = JSON.parse(localStorage.getItem('usedWords') || '[]');
-
   if (usedWords.includes(word)) {
     output.innerText = `You've already submitted "${word}".`;
     return;
@@ -177,10 +176,24 @@
     } else {
       output.innerText = data.message;
 
-      // ✅ Merge & deduplicate list
+      // ✅ Add the new word
       usedWords.push(word);
-      const unique = [...new Set(usedWords)];
-      localStorage.setItem('usedWords', JSON.stringify(unique));
+
+      // ✅ Auto-sync: Fetch updated word list
+      const syncRes = await fetch(`${backendURL}/words`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: '' })  // assume public view is allowed; if not, skip this
+      });
+
+      if (syncRes.ok) {
+        const serverWords = (await syncRes.json()).words;
+        usedWords = usedWords.filter(w => serverWords.includes(w));
+        localStorage.setItem('usedWords', JSON.stringify([...new Set(usedWords)]));
+      } else {
+        // fallback: still update with the new word at least
+        localStorage.setItem('usedWords', JSON.stringify([...new Set(usedWords)]));
+      }
     }
   } catch (err) {
     output.innerText = 'Failed to connect to server.';
@@ -188,6 +201,7 @@
 
   input.value = '';
 }
+
 
     async function updateWordList(password) {
       try {
@@ -214,27 +228,33 @@
       }
     }
 
-    async function removeWord(word) {
-      if (!confirm(`Are you sure you want to remove "${word}"?`)) return;
+async function removeWord(word) {
+  if (!confirm(`Are you sure you want to remove "${word}"?`)) return;
 
-      try {
-        const res = await fetch(`${backendURL}/words`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ word, password: adminPassword })
-        });
+  try {
+    const res = await fetch(`${backendURL}/words`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ word, password: adminPassword })
+    });
 
-        const data = await res.json();
+    const data = await res.json();
 
-        if (res.ok) {
-          updateWordList(adminPassword);
-        } else {
-          alert(data.error || "Failed to remove word.");
-        }
-      } catch (err) {
-        alert("Error removing word.");
-      }
+    if (res.ok) {
+      // ✅ Also remove from localStorage usedWords
+      let usedWords = JSON.parse(localStorage.getItem('usedWords') || '[]');
+      usedWords = usedWords.filter(w => w !== word);
+      localStorage.setItem('usedWords', JSON.stringify(usedWords));
+
+      updateWordList(adminPassword);
+    } else {
+      alert(data.error || "Failed to remove word.");
     }
+  } catch (err) {
+    alert("Error removing word.");
+  }
+}
+
 
     function checkPassword() {
       const input = document.getElementById("adminPassword").value;
