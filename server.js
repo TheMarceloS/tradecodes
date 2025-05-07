@@ -12,16 +12,17 @@ const responses = [
   "ERIS47"
 ];
 
-// ✅ CORS setup for frontend
-
+// ✅ CORS setup
 const corsOptions = {
   origin: 'https://themarcelos.github.io',
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 };
-
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Ensure preflight OPTIONS requests are allowed
+app.options('*', cors(corsOptions));
+
+// ✅ JSON body parser (was missing)
+app.use(express.json());
 
 // 📝 Submit a new word
 app.post('/submit-word', async (req, res) => {
