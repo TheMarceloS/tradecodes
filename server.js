@@ -9,8 +9,11 @@ const words = [];
 const responses = [
   "ERIS47"
 ];
+const allowedOrigin = 'https://themarcelos.github.io';
 
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigin
+}));
 app.use(express.json());
 
 app.post('/submit-word', async (req, res) => {
