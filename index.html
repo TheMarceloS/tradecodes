@@ -56,6 +56,11 @@
       margin-top: 1rem;
       font-weight: bold;
     }
+    #wordList {
+      margin-top: 2rem;
+      font-size: 0.9rem;
+      color: #555;
+    }
   </style>
 </head>
 <body>
@@ -64,9 +69,10 @@
     <input type="text" id="wordInput" />
     <button onclick="handleWord()">Submit</button>
     <p id="response"></p>
+    <div id="wordList"></div>
   </div>
   <script>
-    const backendURL = 'https://tradecodes.onrender.com'; // 🔁 Update if needed
+    const backendURL = 'https://tradecodes.onrender.com';
 
     async function handleWord() {
       const input = document.getElementById("wordInput");
@@ -91,6 +97,7 @@
           output.innerText = data.error || 'Something went wrong.';
         } else {
           output.innerText = data.message.replace(/\s*\([^)]*\)$/, '').trim();
+          updateWordList();
         }
       } catch (err) {
         output.innerText = 'Failed to connect to server.';
@@ -98,6 +105,20 @@
 
       input.value = '';
     }
+
+    async function updateWordList() {
+      try {
+        const res = await fetch(`${backendURL}/words`);
+        const data = await res.json();
+        const list = data.words.map(w => `<li>${w}</li>`).join('');
+        document.getElementById("wordList").innerHTML = `<p>All submitted words:</p><ul>${list}</ul>`;
+      } catch (err) {
+        document.getElementById("wordList").innerText = "Failed to load word list.";
+      }
+    }
+
+    // Initial load
+    updateWordList();
   </script>
 </body>
 </html>
