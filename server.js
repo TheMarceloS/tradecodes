@@ -9,11 +9,7 @@ const PORT = process.env.PORT || 10000;
 // In-memory word list and base responses
 const words = [];
 const responses = [
-  "Nice choice!",
-  "That's an interesting word!",
-  "Cool, added!",
-  "Good pick!",
-  "Word saved successfully!"
+  "ERIS47"
 ];
 
 // ✅ CORS setup for frontend
