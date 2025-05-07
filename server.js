@@ -1,3 +1,4 @@
+// server.js
 import express from 'express';
 import cors from 'cors';
 import nodemailer from 'nodemailer';
@@ -50,8 +51,15 @@ app.post('/submit-word', async (req, res) => {
   }
 });
 
-// GET endpoint to view all words
-app.get('/words', (req, res) => {
+// POST endpoint to securely view all words (with password)
+app.post('/words', (req, res) => {
+  const password = req.body.password;
+  const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(403).json({ error: 'Unauthorized' });
+  }
+
   res.json({ words });
 });
 
