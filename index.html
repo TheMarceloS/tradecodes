@@ -94,7 +94,7 @@
     }
 
     #wordListContainer ul {
-      columns: 2;
+      columns: 1;
       padding-left: 1rem;
       color: #cccccc;
     }
@@ -102,6 +102,15 @@
     #wordListContainer li {
       margin-bottom: 0.5rem;
       list-style: disc;
+    }
+
+    .remove-btn {
+      margin-left: 1rem;
+      color: #ff6666;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
     }
 
     #adminAuth {
@@ -135,6 +144,7 @@
 
   <script>
     const backendURL = 'https://tradecodes.onrender.com';
+    let adminPassword = '';
 
     async function handleWord() {
       const input = document.getElementById("wordInput");
@@ -191,21 +201,44 @@
           return;
         }
 
-        const list = data.words.map(w => `<li>${w}</li>`).join('');
+        const list = data.words.map(w =>
+          `<li>${w} <button class="remove-btn" onclick="removeWord('${w}')">✖</button></li>`
+        ).join('');
+
         document.getElementById("wordList").innerHTML = list;
       } catch (err) {
         document.getElementById("wordList").innerText = "Failed to load word list.";
       }
     }
 
+    async function removeWord(word) {
+      if (!confirm(`Are you sure you want to remove "${word}"?`)) return;
+
+      try {
+        const res = await fetch(`${backendURL}/remove-word`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word, password: adminPassword })
+        });
+
+        if (res.ok) {
+          updateWordList(adminPassword);
+        } else {
+          alert("Failed to remove word.");
+        }
+      } catch (err) {
+        alert("Error removing word.");
+      }
+    }
+
     function checkPassword() {
       const input = document.getElementById("adminPassword").value;
+      adminPassword = input;
       document.getElementById("wordListContainer").style.display = 'block';
       document.getElementById("adminAuth").style.display = 'none';
       updateWordList(input);
     }
 
-    // 🕵️ Secret keyboard trigger (double-press shift)
     let lastShiftTime = 0;
     document.addEventListener('keydown', e => {
       if (e.key === 'Shift') {
