@@ -13,14 +13,15 @@ const responses = [
 ];
 
 // ✅ CORS setup for frontend
-app.use(cors({
+
+const corsOptions = {
   origin: 'https://themarcelos.github.io',
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
-}));
+};
 
-app.options('*', cors()); // Handle preflight
-app.use(express.json());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Ensure preflight OPTIONS requests are allowed
 
 // 📝 Submit a new word
 app.post('/submit-word', async (req, res) => {
