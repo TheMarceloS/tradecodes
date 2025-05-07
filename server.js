@@ -1,16 +1,17 @@
-// server.js
+// server.js (Supabase version)
 import express from 'express';
 import cors from 'cors';
+import { createClient } from '@supabase/supabase-js';
 import nodemailer from 'nodemailer';
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// In-memory word list and base responses
-const words = [];
-const responses = [
-  "ERIS47"
-];
+// ✅ Supabase client setup
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // secure server key
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // ✅ CORS setup
 const corsOptions = {
@@ -18,10 +19,9 @@ const corsOptions = {
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 };
+
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
-
-// ✅ JSON body parser (was missing)
 app.use(express.json());
 
 // 📝 Submit a new word
@@ -31,23 +31,42 @@ app.post('/submit-word', async (req, res) => {
 
   if (!word) return res.status(400).json({ error: 'Word is required' });
   if (!/^[a-zA-Z]+\d+$/.test(word)) return res.status(400).json({ error: 'This is not a valid input.' });
-  if (words.includes(word)) return res.status(409).json({ error: 'This word was already submitted.' });
 
-  const filteredWords = words.filter(w => !usedWords.includes(w) && w !== word);
-  const replyPool = responses.concat(filteredWords);
-  const reply = replyPool[Math.floor(Math.random() * replyPool.length)];
+  const { data: existing, error: fetchErr } = await supabase
+    .from('words')
+    .select('value')
+    .eq('value', word)
+    .single();
+
+  if (existing) return res.status(409).json({ error: 'This word was already submitted.' });
+
+  const { data: allWords, error: getErr } = await supabase
+    .from('words')
+    .select('value');
+
+  if (getErr) return res.status(500).json({ error: 'Failed to fetch words.' });
+
+  const serverWords = allWords.map(w => w.value);
+  const filteredWords = serverWords.filter(w => !usedWords.includes(w) && w !== word);
+  const responses = ['ERIS47', ...filteredWords];
+  const reply = responses[Math.floor(Math.random() * responses.length)];
+
+  const { error: insertErr } = await supabase
+    .from('words')
+    .insert([{ value: word }]);
+
+  if (insertErr) return res.status(500).json({ error: 'Failed to store word.' });
 
   try {
     await sendEmail(word);
     res.json({ message: reply });
-    words.push(word);
   } catch (err) {
     res.status(500).json({ error: 'Email sending failed' });
   }
 });
 
 // 🔐 Admin-only: Get word list
-app.post('/words', (req, res) => {
+app.post('/words', async (req, res) => {
   const password = req.body.password;
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
@@ -55,11 +74,14 @@ app.post('/words', (req, res) => {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
-  res.json({ words });
+  const { data, error } = await supabase.from('words').select('value');
+  if (error) return res.status(500).json({ error: 'Failed to retrieve words.' });
+
+  res.json({ words: data.map(w => w.value) });
 });
 
 // 🗑️ Admin-only: Remove a word
-app.delete('/words', (req, res) => {
+app.delete('/words', async (req, res) => {
   const password = req.body.password;
   const wordToRemove = req.body.word?.trim().toLowerCase();
   const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
@@ -68,16 +90,22 @@ app.delete('/words', (req, res) => {
     return res.status(403).json({ error: 'Unauthorized' });
   }
 
-  const index = words.indexOf(wordToRemove);
-  if (index === -1) return res.status(404).json({ error: 'Word not found' });
+  const { error } = await supabase
+    .from('words')
+    .delete()
+    .eq('value', wordToRemove);
 
-  words.splice(index, 1);
+  if (error) return res.status(500).json({ error: 'Failed to remove word.' });
+
   res.json({ message: 'Word removed successfully' });
 });
 
 // 🌐 Public sync endpoint for usedWords cleanup
-app.get('/approved-words', (req, res) => {
-  res.json({ words });
+app.get('/approved-words', async (req, res) => {
+  const { data, error } = await supabase.from('words').select('value');
+  if (error) return res.status(500).json({ error: 'Failed to load words.' });
+
+  res.json({ words: data.map(w => w.value) });
 });
 
 // 📧 Email via nodemailer
