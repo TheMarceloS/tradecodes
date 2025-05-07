@@ -128,7 +128,7 @@
         const res = await fetch(`${backendURL}/submit-word`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ word })
+          body: JSON.stringify({ word, usedWords })
         });
 
         const data = await res.json();
