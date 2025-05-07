@@ -31,11 +31,12 @@ app.post('/submit-word', async (req, res) => {
   if (!word) return res.status(400).json({ error: 'Word is required' });
   if (words.includes(word)) return res.status(409).json({ error: 'Word already exists' });
 
-  words.push(word);
-
-  // Exclude user's own words from reply pool
-  const filteredWords = words.filter(w => !usedWords.includes(w));
+  // Exclude user's own words AND the current input
+  const filteredWords = words.filter(w => !usedWords.includes(w) && w !== word);
   const replyPool = responses.concat(filteredWords);
+
+  words.push(word);
+  
   const reply = replyPool[Math.floor(Math.random() * replyPool.length)];
 
   try {
