@@ -150,47 +150,40 @@
       const word = input.value.trim().toLowerCase();
       const output = document.getElementById("response");
       const validFormat = /^[a-zA-Z]+\d+$/;
-
+    
+      const alreadySubmitted = localStorage.getItem('submittedWord');
+      if (alreadySubmitted) {
+        output.innerText = `You've already submitted a word.`;
+        return;
+      }
+    
       if (!validFormat.test(word)) {
         output.innerText = "This is not a valid input.";
         return;
       }
-
-      let usedWords = JSON.parse(localStorage.getItem('usedWords') || '[]');
-      if (usedWords.includes(word)) {
-        output.innerText = `You've already submitted "${word}".`;
-        return;
-      }
-
+    
       try {
         const res = await fetch(`${backendURL}/submit-word`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ word, usedWords })
+          body: JSON.stringify({ word, usedWords: [] })
         });
-
+    
         const data = await res.json();
-
+    
         if (!res.ok) {
           output.innerText = data.error || 'Something went wrong.';
         } else {
           output.innerText = data.message;
-
-          // Add and sync usedWords
-          usedWords.push(word);
-          const syncRes = await fetch(`${backendURL}/approved-words`);
-          if (syncRes.ok) {
-            const serverWords = (await syncRes.json()).words;
-            usedWords = usedWords.filter(w => serverWords.includes(w));
-          }
-          localStorage.setItem('usedWords', JSON.stringify([...new Set(usedWords)]));
+          localStorage.setItem('submittedWord', word);
         }
       } catch (err) {
         output.innerText = 'Failed to connect to server.';
       }
-
+    
       input.value = '';
     }
+
 
     async function updateWordList(password) {
       try {
@@ -241,11 +234,6 @@
       }
     }
 
-    const alreadySubmitted = localStorage.getItem('submittedWord');
-    if (alreadySubmitted) {
-      output.innerText = `You've already submitted a word.`;
-      return;
-    }
 
 
     function checkPassword() {
